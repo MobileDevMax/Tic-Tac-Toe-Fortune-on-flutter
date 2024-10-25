@@ -1,0 +1,165 @@
+import 'package:flutter/material.dart';
+import 'dart:math';
+
+void main() {
+  runApp(TicTacToeFortune());
+}
+
+class TicTacToeFortune extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Tic Tac Toe Fortune',
+      home: GameBoard(),
+    );
+  }
+}
+
+class GameBoard extends StatefulWidget {
+  @override
+  _GameBoardState createState() => _GameBoardState();
+}
+
+class _GameBoardState extends State<GameBoard> {
+  final int gridSize = 6;
+  List<List<String>> board;
+  String currentPlayer;
+  List<int> roll;
+
+  _GameBoardState()
+      : board = List.generate(6, (_) => List.filled(6, '')),
+        currentPlayer = 'X',
+        roll = [0, 0];
+
+  void _rollDice() {
+    setState(() {
+      Random rand = Random();
+      roll[0] = rand.nextInt(6) + 1; 
+      roll[1] = rand.nextInt(6) + 1; 
+    });
+  }
+
+  void _makeMove(int row, int col) {
+    if (board[row][col] == '') {
+      setState(() {
+        board[row][col] = currentPlayer;
+        if (!_checkWin()) {
+          currentPlayer = currentPlayer == 'X' ? 'O' : 'X';
+        }
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('The cage is occupied!')),
+      );
+    }
+  }
+
+  bool _checkWin() {
+    for (int i = 0; i < gridSize; i++) {
+      for (int j = 0; j <= gridSize - 3; j++) {
+        if (board[i][j] == currentPlayer &&
+            board[i][j + 1] == currentPlayer &&
+            board[i][j + 2] == currentPlayer) {
+          _showDialog('$currentPlayer won!'); 
+          return true; 
+        }
+        if (board[j][i] == currentPlayer &&
+            board[j + 1][i] == currentPlayer &&
+            board[j + 2][i] == currentPlayer) {
+          _showDialog('$currentPlayer won!');
+          return true; 
+        }
+      }
+    }
+
+    for (int i = 0; i <= gridSize - 3; i++) {
+      for (int j = 0; j <= gridSize - 3; j++) {
+        if (board[i][j] == currentPlayer &&
+            board[i + 1][j + 1] == currentPlayer &&
+            board[i + 2][j + 2] == currentPlayer) {
+          _showDialog('$currentPlayer won!'); 
+          return true; 
+        }
+        if (board[i][j + 2] == currentPlayer &&
+            board[i + 1][j + 1] == currentPlayer &&
+            board[i + 2][j] == currentPlayer) {
+          _showDialog('$currentPlayer won!');
+          return true; 
+        }
+      }
+    }
+
+    if (board.every((row) => row.every((cell) => cell.isNotEmpty))) {
+      _showDialog('Draw!');
+    }
+
+    return false;
+  }
+
+  void _showDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _resetGame();
+              },
+              child: Text('Play again'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _resetGame() {
+    setState(() {
+      board = List.generate(6, (_) => List.filled(6, ''));
+      currentPlayer = 'X';
+      roll = [0, 0];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Tic Tac Toe Fortune'),
+        actions: [
+          IconButton(icon: Icon(Icons.casino), onPressed: _rollDice),
+        ],
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Cubes: ${roll[0]} и ${roll[1]}', style: TextStyle(fontSize: 24)),
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: gridSize),
+              itemCount: gridSize * gridSize,
+              itemBuilder: (context, index) {
+                int row = index ~/ gridSize;
+                int col = index % gridSize;
+                return GestureDetector(
+                  onTap: () => _makeMove(row, col),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black),
+                    ),
+                    child: Center(
+                      child: Text(board[row][col], style: TextStyle(fontSize: 36)),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
